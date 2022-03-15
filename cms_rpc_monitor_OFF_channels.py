@@ -9,7 +9,7 @@ pp = pprint.PrettyPrinter(indent=4)
 import cx_Oracle
 
 
-cx_Oracle.init_oracle_client(lib_dir=f"{os.getcwd()}/lib/instantclient_19_8")
+cx_Oracle.init_oracle_client(lib_dir=f"{os.getcwd()}/lib/instantclient_21_5")
 
 connection_str = """(
     DESCRIPTION=
@@ -42,11 +42,17 @@ def query_by_dpid(cursor, dpid):
             FROM CMS_RPC_PVSS_COND.FWCAENCHANNEL 
             WHERE dpid = {dpid} 
             AND ACTUAL_VMON IS NOT NULL 
+            AND CHANGE_DATE BETWEEN TO_DATE('2022-03-11 19:00:00', 'YYYY-MM-DD HH24:MI:SS') AND TO_DATE('2022-03-12 14:00:00', 'YYYY-MM-DD HH24:MI:SS')
             ORDER BY CHANGE_DATE DESC
             OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY
             """
     )
-    return next(cursor)
+    try:
+        return next(cursor)
+    except:
+        print("An exception occurred")
+        return -999, -999
+    
 
 
 channels = {}
@@ -63,7 +69,7 @@ if __name__ == "__main__":
     low_vmon = []
     for channel in tqdm(channels):
         _, vmons[channel] = query_by_dpid(cursor, channels[channel])
-        if vmons[channel] < 100:
+        if vmons[channel] < 5000:
             low_vmon.append(channel)
 
     print("All VMONs:")
@@ -72,6 +78,6 @@ if __name__ == "__main__":
     
 
 
-    print("Channels with VMON < 100:")
+    print("Channels with VMON < 5000:")
     pp.pprint(low_vmon)
 
